@@ -1,4 +1,4 @@
--- Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
+-- Question 5: Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
 
 -- For both strikeouts and home runs, the average per game generally increases over time.
 
@@ -96,3 +96,75 @@ SELECT
 	, ROUND(strikeout_count / game_count, 2) AS avg_strikeouts_per_game
 	, ROUND(homerun_count / game_count, 2) AS avg_homeruns_per_game
 FROM g_so_hr_per_decade;
+
+
+
+-- Question 9: Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+
+WITH al_nl_managers AS (
+		(SELECT playerid 
+			FROM awardsmanagers
+		WHERE awardid = 'TSN Manager of the Year'
+			AND lgid = 'NL'
+		ORDER BY playerid, yearid)
+	INTERSECT
+		(SELECT playerid 
+			FROM awardsmanagers
+		WHERE awardid = 'TSN Manager of the Year'
+			AND lgid = 'AL'
+		ORDER BY playerid, yearid)
+)
+SELECT DISTINCT 
+	playerid
+	, p.nameFirst
+	, p.nameLast
+	, teamid
+	, awardid
+	, yearid
+	, am.lgid 
+	FROM awardsmanagers AS am
+INNER JOIN people AS p
+	USING(playerid)
+LEFT JOIN managers AS m
+USING(playerid, yearid)
+WHERE playerid IN (SELECT playerid FROM al_nl_managers)
+	AND awardid = 'TSN Manager of the Year'
+ORDER BY playerid, yearid
+;
+
+-- SELECT * FROM awardsmanagers
+-- WHERE awardid = 'TSN Manager of the Year'
+-- 	AND (lgid = 'NL' OR lgid = 'AL')
+-- ORDER BY playerid, yearid
+-- ;
+
+-- SELECT * 
+-- FROM managers
+-- WHERE playerid IN ('johnsda02', 'leylaji99')
+-- ORDER BY playerid, yearid;
+
+-- WITH nl AS (
+-- 	SELECT * FROM awardsmanagers
+-- 	WHERE awardid = 'TSN Manager of the Year'
+-- 		AND lgid = 'NL'
+-- 	ORDER BY playerid, yearid
+-- )
+-- SELECT * FROM nl
+-- INNER JOIN (
+-- 	SELECT * FROM awardsmanagers
+-- 	WHERE awardid = 'TSN Manager of the Year'
+-- 		AND lgid = 'AL'
+-- 	ORDER BY playerid, yearid)
+-- USING(playerid)
+-- ;
+
+-- (SELECT playerid, awardid, yearid, lgid FROM awardsmanagers
+-- WHERE awardid = 'TSN Manager of the Year'
+-- 	AND lgid = 'NL'
+-- ORDER BY playerid, yearid)
+-- UNION
+-- (SELECT playerid, awardid, yearid, lgid FROM awardsmanagers
+-- WHERE awardid = 'TSN Manager of the Year'
+-- 	AND lgid = 'AL'
+-- ORDER BY playerid, yearid)
+-- ;
