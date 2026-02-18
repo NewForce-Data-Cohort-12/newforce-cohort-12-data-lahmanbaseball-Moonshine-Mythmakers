@@ -422,7 +422,7 @@ SELECT DISTINCT
 	, p.namefirst
 	, p.namelast
 	, LEFT(p.debut, 4)::INTEGER AS debut_year
-	, SUM(hr) OVER(PARTITION BY playerid)
+	, SUM(hr) OVER(PARTITION BY playerid) AS homeruns
 FROM batting
 LEFT JOIN people AS p
 USING(playerid)
@@ -430,3 +430,72 @@ WHERE yearid = 2016
 	AND hr >= 1
 	AND 2016 - LEFT(p.debut, 4)::INTEGER >= 10
 ORDER BY playerid;
+
+-- Finding sum of other years
+SELECT DISTINCT
+	playerid
+	, yearid
+	, p.namefirst
+	, p.namelast
+	, LEFT(p.debut, 4)::INTEGER AS debut_year
+	, SUM(hr) OVER(PARTITION BY playerid, yearid) AS homeruns
+FROM batting
+LEFT JOIN people AS p
+USING(playerid)
+WHERE 
+	-- yearid = 2016
+	hr >= 1
+	AND 2016 - LEFT(p.debut, 4)::INTEGER >= 10
+ORDER BY playerid;
+
+-- Finding the career max for each player
+WITH yearly_homeruns AS (
+	SELECT DISTINCT
+		playerid
+		, yearid
+		, p.namefirst
+		, p.namelast
+		, LEFT(p.debut, 4)::INTEGER AS debut_year
+		, SUM(hr) OVER(PARTITION BY playerid, yearid) AS homeruns
+	FROM batting
+	LEFT JOIN people AS p
+	USING(playerid)
+	WHERE 
+		hr >= 1
+		AND 2016 - LEFT(p.debut, 4)::INTEGER >= 10
+	ORDER BY playerid
+)
+SELECT *
+	, MAX(homeruns) OVER(PARTITION BY playerid) AS career_max_homeruns
+FROM yearly_homeruns;
+
+-- Filtering for players where the career max occurred in 2016
+WITH career_max_table AS (
+	WITH yearly_homeruns AS (
+		SELECT DISTINCT
+			playerid
+			, yearid
+			, p.namefirst
+			, p.namelast
+			, LEFT(p.debut, 4)::INTEGER AS debut_year
+			, SUM(hr) OVER(PARTITION BY playerid, yearid) AS homeruns
+		FROM batting
+		LEFT JOIN people AS p
+		USING(playerid)
+		WHERE 
+			hr >= 1
+			AND 2016 - LEFT(p.debut, 4)::INTEGER >= 10
+		ORDER BY playerid
+	)
+	SELECT *
+		, MAX(homeruns) OVER(PARTITION BY playerid) AS career_max_homeruns
+	FROM yearly_homeruns
+)
+SELECT 
+	namefirst
+	, namelast
+	, homeruns
+FROM career_max_table
+WHERE 
+	yearid = 2016 AND
+	homeruns = career_max_homeruns;
