@@ -6,14 +6,14 @@
 -- If you need a hint, you can structure your query as follows:
 
 -- SELECT DISTINCT lgid, ( ) FROM teams t WHERE yearid = 2016;
-select distinct lgid
+select distinct lgid,
 from teams as t
 where yearid = 2016;
 
-select teamid, dlgid, sum(w)
+select teamid, lgid, w
 from teams
 where yearid = 2016
-group by teamid, lgid;
+order by w desc;
 
 ----------------A:
 SELECT
@@ -30,4 +30,12 @@ WHERE t.yearid = 2016
     )
 ORDER BY t.lgid;
 
+SELECT MAX(t2.w)
+        FROM teams t2
+        WHERE t2.yearid = 2016
 
+------------------------
+SELECT teamid, w, l, total_games, w*100.0 / total_games AS winning_pct FROM teams t, LATERAL ( SELECT w + l AS total_games ) AS tg WHERE yearid = 2016 ORDER BY winning_pct DESC;
+
+select namefirst, namelast, birthmonth, birthday, birthyear from people, 
+	lateral(select birthday+birt as birthdate)
