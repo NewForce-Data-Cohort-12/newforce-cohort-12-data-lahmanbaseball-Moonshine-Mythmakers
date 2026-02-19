@@ -26,7 +26,7 @@ SELECT
 	, playerID
 	, namefirst
 	, namelast
-	, a.g_all
+	, a.g_all AS games_played
 	, a.teamid
 FROM people
 LEFT JOIN appearances AS a
@@ -132,6 +132,14 @@ FROM position_groups
 WHERE yearid = 2016
 GROUP BY pos_group;
 
+-- A solution with less code:
+SELECT
+	SUM(CASE WHEN pos = 'OF' THEN po END) AS Outfield
+	, SUM(CASE WHEN pos IN ('SS', '1B', '2B', '3B') THEN po END) AS Infield
+	, SUM(CASE WHEN pos IN ('P', 'C') THEN po END) AS Battery
+FROM fielding
+WHERE yearid = 2016;
+
 
 -- Question 6
 -- Find the player who had the most success stealing bases in 2016, where success is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted at least 20 stolen bases.
@@ -172,12 +180,16 @@ ORDER BY yearid DESC, theft_attempts DESC NULLS LAST;
 WITH theft_table AS (
 	SELECT DISTINCT
 		playerid
+		, p.namefirst
+		, p.namelast
 		, yearid
 		, SUM(sb) AS sum_stolen
 		, SUM(cs) AS sum_caught
 		, SUM(sb) + SUM(cs) AS theft_attempts
 	FROM batting
-	GROUP BY playerid, yearid
+	INNER JOIN people AS p
+	USING(playerid)
+	GROUP BY p.namefirst, p.namelast, playerid, yearid
 )
 SELECT 
 	*
@@ -187,13 +199,14 @@ WHERE theft_attempts >= 20
 	AND yearid = 2016
 ORDER BY pct_success DESC;
 
+-- (No longer useful since I added fist and last name to the above query)
 -- Finding first and last name for the most successful base thief
-SELECT
-	playerid
-	, namefirst
-	, namelast
-FROM people
-WHERE playerid = 'owingch01';
+-- SELECT
+-- 	playerid
+-- 	, namefirst
+-- 	, namelast
+-- FROM people
+-- WHERE playerid = 'owingch01';
 
 
 -- Question 7
@@ -353,7 +366,8 @@ ORDER BY year, team;
 SELECT DISTINCT
 	year
 	, team
-	, hg.park
+	, name
+	, teams.park
 	, hg.games AS games
 	, hg.attendance AS attendance
 	, ROUND(hg.attendance::NUMERIC / hg.games::NUMERIC, 2) AS avg_home_attendance
@@ -370,7 +384,9 @@ LIMIT 5;
 SELECT DISTINCT
 	year
 	, team
+	, name
 	, hg.park
+	, teams.park
 	, hg.games AS games
 	, hg.attendance AS attendance
 	, ROUND(hg.attendance::NUMERIC / hg.games::NUMERIC, 2) AS avg_home_attendance

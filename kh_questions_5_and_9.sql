@@ -82,7 +82,8 @@ FROM games_homeruns_per_decade;
 -- Combining results into one table:
 WITH g_so_hr_per_decade AS (
 	SELECT 
-		SUM(g::NUMERIC) AS game_count
+		-- Dividing game_count by 2 since each game in the teams table has two associated teams
+		SUM(g::NUMERIC)/2 AS game_count 
 		, SUM(so::NUMERIC) AS strikeout_count
 		, SUM(hr::NUMERIC) AS homerun_count
 		, CONCAT(LEFT(yearid::TEXT, 3), '0')::INTEGER AS decade
@@ -119,6 +120,7 @@ SELECT DISTINCT
 	, p.nameFirst
 	, p.nameLast
 	, teamid
+	, teams.name
 	, awardid
 	, yearid
 	, am.lgid 
@@ -127,6 +129,8 @@ INNER JOIN people AS p
 	USING(playerid)
 LEFT JOIN managers AS m
 USING(playerid, yearid)
+INNER JOIN teams
+USING(teamid, yearid)
 WHERE playerid IN (SELECT playerid FROM al_nl_managers)
 	AND awardid = 'TSN Manager of the Year'
 ORDER BY playerid, yearid
